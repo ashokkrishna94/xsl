@@ -1,0 +1,299 @@
+<html>
+<head>
+    <title></title>
+</head>
+
+<body>
+ <input type="file" id="fileUpload" />
+    <input type="button" id="upload" value="Upload" />
+    <hr />
+   
+    <div style="width: 100%;">
+     <div id="container" style="float:left; width: 40%">
+     </div>
+     <div id="xslcontainer" style="float:right;  width: 60%">
+     </div>
+     </div>
+    <div style="clear:both"></div>
+    
+    <input type="button" id="upload" value="GenerateXSL" onclick="generatexsl();" />
+
+    
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script type="text/javascript">
+    
+    var stack=[];
+    var tags;
+    var children_data = {};
+    var to_change = {};
+    var xsl;
+
+    function Node(data) {
+        this.data = data;
+        this.parent = null;
+        this.children = [];
+    }
+ 
+    function Tree(data) {
+        var node = new Node(data);
+        this._root = node;
+    }
+
+    function generatexsl(){
+        var rootnode = document.getElementById('tag1').value.split('/')[0];
+       
+        var newtags = new Set();
+
+        console.log(tags);
+
+        for(var i = 0; i< tags.length; i++){
+            var temp = "tag"+i;
+            temp = document.getElementById(temp).value;
+            temp = temp.split('/');
+
+            var temp2 = tags[i-1] + "cb";
+           
+            for(var j = 0; j< temp.length; j++){
+                if(temp[j]!=""){
+                    newtags.add(temp[j]);                                   
+                }
+                if(temp[j]!="" & j == (temp.length - 1) & temp[j] != rootnode){
+                    console.log(temp2);
+                    console.log(document.getElementById(temp2).checked);
+                    to_change[temp[j]] = tags[i-1] + "/" +  document.getElementById(temp2).checked;
+                }
+            }
+
+            
+        }
+
+        console.log(newtags);
+        console.log(to_change);
+
+
+        for (let v of newtags) { 
+            children_data[v] = ""
+
+            for(var i = 0; i< tags.length; i++){
+                var temp = "tag"+i;
+                temp = document.getElementById(temp).value;
+                temp = temp.split('/');
+
+                for(var j = 0; j< temp.length; j++){
+                    if(temp[j] == v & (j + 1) != temp.length){
+                        if(children_data[v].split('/').indexOf(temp[j+1]) == -1){
+                            if(children_data[v] != ""){
+                                children_data[v] = children_data[v] + "/" + temp[j+1];                                                                                                              
+                            }else{
+                                children_data[v] = temp[j+1];                                                                                                               
+                            }
+                        }
+                    }
+                }
+            }
+
+        }  
+
+        console.log(children_data);
+
+        xslcontainer.appendChild(document.createTextNode("<?xml version=\"1.0\"?>"));
+        xslcontainer.appendChild(document.createElement("br"));
+        xslcontainer.appendChild(document.createTextNode("<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\"> "));
+        xslcontainer.appendChild(document.createElement("br"));
+        xslcontainer.appendChild(document.createTextNode("<xsl:output method=\"xml\" indent=\"yes\"/>"));
+        xslcontainer.appendChild(document.createElement("br"));
+
+        // xsl = "<?xml version=\"1.0\"?>\n<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\"> ";
+
+        // xsl = xsl + "\n<xsl:output method=\"xml\" indent=\"yes\"/>";
+
+        stack.push("</xsl:stylesheet>");
+
+        xslcontainer.appendChild(document.createTextNode("<xsl:template match=\"/\">"));
+        xslcontainer.appendChild(document.createElement("br"));
+
+        // xsl = xsl + "\n<xsl:template match=\"/\">";
+
+        stack.push("</xsl:template>");
+
+        createxslfornode(rootnode)
+
+        // xsl = xsl + "\n" + stack.pop();
+        // xsl = xsl + "\n" + stack.pop();
+
+        xslcontainer.appendChild(document.createTextNode(stack.pop()));
+        xslcontainer.appendChild(document.createElement("br"));
+        xslcontainer.appendChild(document.createTextNode(stack.pop()));
+        xslcontainer.appendChild(document.createElement("br"));
+        
+        console.log(xsl);       
+
+        // xsl = xsl.replace(/\n/g, "<br />");
+
+
+
+        xslcontainer.appendChild(document.createElement(xsl));
+
+    }
+
+    function createxslfornode(node){
+        // xsl = xsl + "\n" + "<" + node + ">";
+        xslcontainer.appendChild(document.createTextNode("<" + node + ">"));
+        xslcontainer.appendChild(document.createElement("br"));
+
+        stack.push("</" + node + ">");
+
+        console.log(node);
+        var temp = children_data[node];
+
+        temp = temp.split('/');
+
+        for(var i = 0; i< temp.length; i++){
+            if(to_change[temp[i]] == null){
+                createxslfornode(temp[i]);     
+            }else{
+                var temp2 = to_change[temp[i]].split('/');
+                console.log(temp2);
+                if(temp2[1] == "true"){
+                    // xsl = xsl + "\n" + "<xsl:attribute name=\"" + temp[i] + "\">";
+                    // xsl = xsl + "\n" + "<xsl:value-of select=\"@" + temp2[0] + "\">";
+                    // xsl = xsl + "\n" + "</xsl:attribute>";
+
+                    xslcontainer.appendChild(document.createTextNode("<xsl:attribute name=\"" + temp[i] + "\">"));
+                    xslcontainer.appendChild(document.createElement("br"));
+                    xslcontainer.appendChild(document.createTextNode("<xsl:value-of select=\"@" + temp2[0] + "\">"));
+                    xslcontainer.appendChild(document.createElement("br"));
+                    xslcontainer.appendChild(document.createTextNode("</xsl:attribute>"));
+                    xslcontainer.appendChild(document.createElement("br"));
+
+                }else{
+                    // xsl = xsl + "\n" + "<" + temp[i] + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  temp[i] + ">";
+
+                    xslcontainer.appendChild(document.createTextNode("\n" + "<" + temp[i] + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  temp[i] + ">"));
+                    xslcontainer.appendChild(document.createElement("br"));
+                }
+            }
+
+        }
+
+        // xsl = xsl + "\n" + stack.pop();
+        xslcontainer.appendChild(document.createTextNode(stack.pop()));
+        xslcontainer.appendChild(document.createElement("br"));
+
+    }
+
+    Tree.prototype.traverseBF = function(callback) {
+        var queue = new Queue();
+     
+        queue.enqueue(this._root);
+ 
+        currentTree = queue.dequeue();
+ 
+        while(currentTree){
+            for (var i = 0, length = currentTree.children.length; i < length; i++) {
+                queue.enqueue(currentTree.children[i]);
+            }
+ 
+            callback(currentTree);
+            currentTree = queue.dequeue();
+        }
+    };
+
+
+    Tree.prototype.add = function(data, toData, traversal) {
+        var child = new Node(data),
+            parent = null,
+            callback = function(node) {
+                if (node.data === toData) {
+                    parent = node;
+                }
+            };
+ 
+        this.contains(callback, traversal);
+ 
+        if (parent) {
+            parent.children.push(child);
+            child.parent = parent;
+        } else {
+            throw new Error('Cannot add node to a non-existent parent.');
+        }
+    };  
+
+    Tree.prototype.contains = function(callback, traversal) {
+        traversal.call(this, callback);
+    };
+    //and some more input elements here
+    //and dont forget to add a submit button
+
+    
+        $(function () { 
+            $("#upload").bind("click", function () {
+                var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xml)$/;
+                if (regex.test($("#fileUpload").val().toLowerCase())) {
+                    if (typeof (FileReader) != "undefined") {
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            var myXML = $.parseXML(e.target.result);
+                            
+                                                     
+                            tags = myXML.getElementsByTagName('*');
+                            
+                            x = myXML.getElementsByTagName("pen")[0];
+                            console.log(x.childNodes);                            
+                            console.log(x.childNodes.length);
+
+                            x = myXML.getElementsByTagName("fiction")[0];
+                            console.log(x.childNodes);                            
+                            console.log(x.childNodes.length);
+                            
+                            var temp = new Set();
+                            
+                            for(var i =0; i<tags.length; i++){
+                                temp.add(tags[i].nodeName);
+                            }
+                            
+                            console.log(temp);
+                            tags = [...temp];
+
+                            container.appendChild(document.createTextNode("Root Tag" + " : "));
+                            var input = document.createElement("input");
+                            input.type = "text";
+                            input.name = "Root Tag" + i;
+                            input.id = "tag0";
+                            container.appendChild(input);
+                            container.appendChild(document.createElement("br"));
+                            container.appendChild(document.createElement("br"));
+
+
+                            for (var i = 0; i< tags.length; i++){
+                                container.appendChild(document.createTextNode(tags[i] + " : "));
+                                var input = document.createElement("input");
+                                input.type = "text";
+                                input.name = tags[i] + i;
+                                input.id = "tag" + (i+1);
+                                container.appendChild(input);
+                                container.appendChild(document.createTextNode("  Attribute "));
+                                var fahr = document.createElement("input");
+                                fahr.type = "checkbox";
+                                fahr.id = tags[i] + "cb";
+                                container.appendChild(fahr);
+                                // Append a line break 
+                                container.appendChild(document.createElement("br"));
+                                container.appendChild(document.createElement("br"));
+                            }
+
+                        }
+                       
+                        reader.readAsText($("#fileUpload")[0].files[0]);
+                    } else {
+                        alert("This browser does not support HTML5.");
+                    }
+                } else {
+                    alert("Please upload a valid XML file.");
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
