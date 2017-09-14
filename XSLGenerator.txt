@@ -40,18 +40,18 @@
     }
 
     function generatexsl(){
-        var rootnode = document.getElementById('tag1').value.split('/')[0];
+        var rootnode = document.getElementById('tag0').value.split('/')[0];
        
         var newtags = new Set();
 
         console.log(tags);
 
         for(var i = 0; i< tags.length; i++){
-            var temp = "tag"+i;
+            var temp = "tag"+ (i+1) ;
             temp = document.getElementById(temp).value;
             temp = temp.split('/');
 
-            var temp2 = tags[i-1] + "cb";
+            var temp2 = tags[i] + "cb";
            
             for(var j = 0; j< temp.length; j++){
                 if(temp[j]!=""){
@@ -60,7 +60,7 @@
                 if(temp[j]!="" & j == (temp.length - 1) & temp[j] != rootnode){
                     console.log(temp2);
                     console.log(document.getElementById(temp2).checked);
-                    to_change[temp[j]] = tags[i-1] + "/" +  document.getElementById(temp2).checked;
+                    to_change[temp[j]] = tags[i] + "/" +  document.getElementById(temp2).checked;
                 }
             }
 
@@ -72,10 +72,11 @@
 
 
         for (let v of newtags) { 
+            console.log(v);
             children_data[v] = ""
 
             for(var i = 0; i< tags.length; i++){
-                var temp = "tag"+i;
+                var temp = "tag"+ (i+1);
                 temp = document.getElementById(temp).value;
                 temp = temp.split('/');
 
@@ -126,7 +127,6 @@
         xslcontainer.appendChild(document.createTextNode(stack.pop()));
         xslcontainer.appendChild(document.createElement("br"));
         
-        console.log(xsl);       
 
         // xsl = xsl.replace(/\n/g, "<br />");
 
@@ -138,47 +138,77 @@
 
     function createxslfornode(node){
         // xsl = xsl + "\n" + "<" + node + ">";
-        xslcontainer.appendChild(document.createTextNode("<" + node + ">"));
-        xslcontainer.appendChild(document.createElement("br"));
 
-        stack.push("</" + node + ">");
 
         console.log(node);
         var temp = children_data[node];
 
-        temp = temp.split('/');
+        if(temp == ""){
+            var temp2 = to_change[node].split('/');
+            
+            if(temp2[1] == "true"){
+                // xsl = xsl + "\n" + "<xsl:attribute name=\"" + temp[i] + "\">";
+                // xsl = xsl + "\n" + "<xsl:value-of select=\"@" + temp2[0] + "\">";
+                // xsl = xsl + "\n" + "</xsl:attribute>";
 
-        for(var i = 0; i< temp.length; i++){
-            if(to_change[temp[i]] == null){
-                createxslfornode(temp[i]);     
+                xslcontainer.appendChild(document.createTextNode("<xsl:attribute name=\"" + node + "\">"));
+                xslcontainer.appendChild(document.createElement("br"));
+                xslcontainer.appendChild(document.createTextNode("<xsl:value-of select=\"@" + temp2[0] + "\">"));
+                xslcontainer.appendChild(document.createElement("br"));
+                xslcontainer.appendChild(document.createTextNode("</xsl:attribute>"));
+                xslcontainer.appendChild(document.createElement("br"));
+
             }else{
-                var temp2 = to_change[temp[i]].split('/');
-                console.log(temp2);
-                if(temp2[1] == "true"){
-                    // xsl = xsl + "\n" + "<xsl:attribute name=\"" + temp[i] + "\">";
-                    // xsl = xsl + "\n" + "<xsl:value-of select=\"@" + temp2[0] + "\">";
-                    // xsl = xsl + "\n" + "</xsl:attribute>";
+                // xsl = xsl + "\n" + "<" + temp[i] + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  temp[i] + ">";
 
-                    xslcontainer.appendChild(document.createTextNode("<xsl:attribute name=\"" + temp[i] + "\">"));
-                    xslcontainer.appendChild(document.createElement("br"));
-                    xslcontainer.appendChild(document.createTextNode("<xsl:value-of select=\"@" + temp2[0] + "\">"));
-                    xslcontainer.appendChild(document.createElement("br"));
-                    xslcontainer.appendChild(document.createTextNode("</xsl:attribute>"));
-                    xslcontainer.appendChild(document.createElement("br"));
-
-                }else{
-                    // xsl = xsl + "\n" + "<" + temp[i] + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  temp[i] + ">";
-
-                    xslcontainer.appendChild(document.createTextNode("\n" + "<" + temp[i] + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  temp[i] + ">"));
-                    xslcontainer.appendChild(document.createElement("br"));
-                }
+                xslcontainer.appendChild(document.createTextNode("\n" + "<" + node + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  node + ">"));
+                xslcontainer.appendChild(document.createElement("br"));
             }
+       
+        }else{
+            xslcontainer.appendChild(document.createTextNode("<" + node + ">"));
+            xslcontainer.appendChild(document.createElement("br"));
 
+            stack.push("</" + node + ">");  
+            temp = temp.split("/");
+            for(var i = 0; i< temp.length; i++){
+                createxslfornode(temp[i]);  
+            } 
+
+            xslcontainer.appendChild(document.createTextNode(stack.pop()));
+            xslcontainer.appendChild(document.createElement("br"));
         }
 
+        // for(var i = 0; i< temp.length; i++){
+        //     if(to_change[temp[i]] == null){
+        //         createxslfornode(temp[i]);     
+        //     }else{
+        //         var temp2 = to_change[temp[i]].split('/');
+        //         console.log(temp2);
+        //         if(temp2[1] == "true"){
+        //             // xsl = xsl + "\n" + "<xsl:attribute name=\"" + temp[i] + "\">";
+        //             // xsl = xsl + "\n" + "<xsl:value-of select=\"@" + temp2[0] + "\">";
+        //             // xsl = xsl + "\n" + "</xsl:attribute>";
+
+        //             xslcontainer.appendChild(document.createTextNode("<xsl:attribute name=\"" + temp[i] + "\">"));
+        //             xslcontainer.appendChild(document.createElement("br"));
+        //             xslcontainer.appendChild(document.createTextNode("<xsl:value-of select=\"@" + temp2[0] + "\">"));
+        //             xslcontainer.appendChild(document.createElement("br"));
+        //             xslcontainer.appendChild(document.createTextNode("</xsl:attribute>"));
+        //             xslcontainer.appendChild(document.createElement("br"));
+
+        //         }else{
+        //             // xsl = xsl + "\n" + "<" + temp[i] + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  temp[i] + ">";
+
+        //             xslcontainer.appendChild(document.createTextNode("\n" + "<" + temp[i] + "><xsl:value-of select=\"@" + temp2[0] + "\"/></" +  temp[i] + ">"));
+        //             xslcontainer.appendChild(document.createElement("br"));
+        //         }
+        //     }
+
+        // }
+
         // xsl = xsl + "\n" + stack.pop();
-        xslcontainer.appendChild(document.createTextNode(stack.pop()));
-        xslcontainer.appendChild(document.createElement("br"));
+
 
     }
 
@@ -238,14 +268,6 @@
                                                      
                             tags = myXML.getElementsByTagName('*');
                             
-                            x = myXML.getElementsByTagName("pen")[0];
-                            console.log(x.childNodes);                            
-                            console.log(x.childNodes.length);
-
-                            x = myXML.getElementsByTagName("fiction")[0];
-                            console.log(x.childNodes);                            
-                            console.log(x.childNodes.length);
-                            
                             var temp = new Set();
                             
                             for(var i =0; i<tags.length; i++){
@@ -254,6 +276,8 @@
                             
                             console.log(temp);
                             tags = [...temp];
+                           
+                            console.log(tags);
 
                             container.appendChild(document.createTextNode("Root Tag" + " : "));
                             var input = document.createElement("input");
