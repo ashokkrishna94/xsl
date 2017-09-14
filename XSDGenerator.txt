@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<body>
+
+	</br>
+	</br>
+
+	<div>
+		<form method="get" name="myform">
+			Root tag : <input type="text" id="Roottag" /> Attribute: <input
+				type="text" id="Rootattri" />
+		</form>
+		<div>
+			<input type="button" value="Next" onclick="show('secondpage');"
+				id="page1id" /> <input type="button" value="Finish"
+				onclick="generatexsd();" id="page1id" />
+
+		</div>
+
+	</div>
+
+	<div id="secondpage" style="display: none">
+		</br> </br>
+
+		<form method="get" name="form0">
+			Tag : <input type="text" id="Tag0" /> ParentTag: <input type="text"
+				id="ParentTag0" /> Attribute: <input type="text" id="attri0" />
+		</form>
+		<select id="selected0" onchange="textToggle(0)">
+			<option disabled selected>-- select an option --</option>
+			<option id="textdrop">Text-only</option>
+			<option id="subtagdrop">Subtag</option>
+		</select>
+
+		<div id="texttoggle0" style="display: none;">
+			Type : <input type="text" id="type0" /> minoccurs: <input
+				type="text" id="minoccur0" /> default : <input type="text"
+				id="default0" /> maxoccur: <input type="text" id="maxoccur0" />
+		</div>
+
+
+		<div id="tagtoggle0" style='display: none;'>
+			Attribute: <input type="text" id="toggleattri0" /> minoccur : <input
+				type="text" id="togglemin0" />
+		</div>
+
+
+		<div id=filter>
+			<input type="button" value="Next" onclick="duplicate();"
+				id="page2id0" /> <input type="button" value="Finish"
+				onclick="generatexsd();" id="page2idf0" />
+
+		</div>
+
+
+	</div>
+
+
+	<script language="JavaScript">
+		var i = 1;
+		var original = document.getElementById('secondpage');
+		var beforeElem = document.getElementById('filter');
+		var data = [];
+		var clicked_finished = 0;
+		var xsd;
+		var stack=[];
+
+		function textToggle(i) {
+			d = document.getElementById("selected" + i).value;
+			if (d == "Subtag") {
+				document.getElementById("texttoggle" + i).style.display = 'none';
+				document.getElementById("tagtoggle" + i).style.display = 'block';
+			} else if (d == "Text-only") {
+				document.getElementById("texttoggle" + i).style.display = 'block';
+				document.getElementById("tagtoggle" + i).style.display = 'none';
+			}
+		}
+
+		function show(elementId) {
+
+			document.getElementById("secondpage").style.display = "none";
+			document.getElementById(elementId).style.display = "block";
+		}
+
+		function generatexsd() {
+			clicked_finished = 1;
+			duplicate();
+
+			/* var temp = "page2idf" + (i - 1);
+			document.getElementById(temp).disabled = true;
+			 */
+			var json = data[0];
+			console.log(data);
+
+			var roottag = data[0]['Roottag'];
+
+			var roottagchildren = [];
+
+			for (var i = 0; i < data.length; i++) {
+				//Do something
+				if (data[i]['ParentTag'] == roottag) {
+					roottagchildren.push(data[i]['Tag']);
+				}
+			}
+
+			console.log(roottagchildren);
+			
+			xsd = xsd + "<?xml version=\"1.0\"?>\n<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">";
+			
+			stack.push("</xs:schema>");
+			stack.push("</xs:element>");
+			stack.push("</xs:complexType>");
+			stack.push("</xs:sequence>");
+			
+			xsd = xsd + "<xs:element name=\"" + roottag + "\">";
+			xsd = xsd + "\n<xs:complexType>\n<xs:sequence>";
+
+			j = 0;
+			while(j<roottagchildren.length){
+				for (var i = 0; i < data.length; i++) {
+					//Do something
+					if (data[i]['ParentTag'] == roottag && data[i]['Tag'] == roottagchildren[j] ) {
+						if(data[i]['selected'] == "Subtag"){
+							xsd = xsd + "\n<xs:element minOccurs=\"" + data[i]['minoccurs'] + "\" name = \"" + roottagchildren[j] + "\">" ;
+							xsd = xsd + "\n<xs:complexType>\n<xs:sequence>";
+							stack.push("</xs:element>");
+							stack.push("</xs:complexType>");
+							stack.push("<xsattribute name = \"" + data[i]['attri'] +  "\" >");							
+							stack.push("</xs:sequence>");
+							createXSD(roottagchildren[j])
+						}else{
+							xsd = xsd + "\n<xs:element minOccurs=\"" + data[i]['Minoccurs'] + "\" maxOccurs=\"" + data[i]['Maxoccurs'] + "\" default=\"" + data[i]['Default'] + "\" name = \"" + roottagchildren[j] + "\" type = \""+ data[i]['Type'] + "\">" ;
+						}
+					}
+				}
+				
+				j= j+1;
+			}
+			
+			xsd = xsd + "\n" + stack.pop();
+			xsd = xsd + "\n" + stack.pop();
+			xsd = xsd + "\n" + stack.pop();
+			xsd = xsd + "\n" + stack.pop();
+			
+			
+			console.log(xsd);
+
+		}
+		
+	 	function createXSD(tag){
+	 		var innertags = [];
+	 		for (var i = 0; i < data.length; i++) {
+				//Do something
+				if (data[i]['ParentTag'] == tag) {
+					innertags.push(data[i]['Tag']);
+				}
+			}
+	 		
+	 		k = 0;
+			while(k<innertags.length){
+				for (var i = 0; i < data.length; i++) {
+					//Do something
+					if (data[i]['ParentTag'] == tag && data[i]['Tag'] == innertags[k] ) {
+						if(data[i]['selected'] == "Subtag"){
+							xsd = xsd + "\n<xs:element minOccurs=\"" + data[i]['minoccurs'] + "\" name = \"" + innertags[k] + "\">" ;
+							xsd = xsd + "\n<xs:complexType>\n<xs:sequence>";
+							stack.push("</xs:element>");
+							stack.push("</xs:complexType>");
+							stack.push("<xsattribute name = \"" + data[i]['attri'] +  "\" >");							
+							stack.push("</xs:sequence>");
+							createXSD(roottagchildren[j])
+						}else{
+							xsd = xsd + "\n<xs:element minOccurs=\"" + data[i]['Minoccurs'] + "\" maxOccurs=\"" + data[i]['Maxoccurs'] + "\" default=\"" + data[i]['Default'] + "\" name = \"" + innertags[k] + "\" type = \""+ data[i]['Type'] + "\">" ;
+						}
+					}
+				}
+				
+				k= k+1;
+			}
+			
+			xsd = xsd + "\n" + stack.pop();
+			xsd = xsd + "\n" + stack.pop();
+			xsd = xsd + "\n" + stack.pop();
+			xsd = xsd + "\n" + stack.pop();
+			
+			
+	 		
+		}
+
+		function duplicate() {
+			var roottag = document.getElementById("Roottag").value;
+			var rootattri = document.getElementById('Rootattri').value;
+			console.log(roottag + "hi");
+
+			var temp = "Tag" + (i - 1);
+			var Tag = document.getElementById(temp).value;
+			temp = "ParentTag" + (i - 1);
+			var ParentTag = document.getElementById(temp).value;
+			temp = "attri" + (i - 1);
+			var attri = document.getElementById(temp).value;
+
+			var pairs;
+
+			temp = "selected" + (i - 1);
+			if (document.getElementById(temp).value == "Text-only") {
+				temp = "type" + (i - 1);
+				var type = document.getElementById(temp).value;
+				temp = "minoccur" + (i - 1);
+				var minoccur = document.getElementById(temp).value;
+				temp = "default" + (i - 1);
+				var default1 = document.getElementById(temp).value;
+				temp = "maxoccur" + (i - 1);
+				var maxoccur = document.getElementById(temp).value;
+
+				pairs = {
+					"selected" : "Text-only",
+					"Index" : i - 1,
+					"Rootattri" : rootattri,
+					"Roottag" : roottag,
+					"Tag" : Tag,
+					"ParentTag" : ParentTag,
+					"attri" : attri,
+					"Type" : type,
+					"Minoccur" : minoccur,
+					"Default" : default1,
+					"Maxoccur" : maxoccur
+				}
+			} else if (document.getElementById(temp).value == "Subtag") {
+				temp = "toggleattri" + (i - 1);
+				var toggleattri = document.getElementById(temp).value;
+				temp = "togglemin" + (i - 1);
+				var togglemin = document.getElementById(temp).value;
+				pairs = {
+					"selected" : "Subtag",
+					"Index" : i - 1,
+					"Tag" : Tag,
+					"ParentTag" : ParentTag,
+					"Rootattri" : rootattri,
+					"Roottag" : roottag,
+					"attri" : attri,
+					"toggleattri" : toggleattri,
+					"minoccurs" : togglemin
+				}
+			} else {
+
+				pairs = {
+					"selected" : "default",
+					"Index" : i - 1,
+					"Tag" : Tag,
+					"ParentTag" : ParentTag,
+					"attri" : attri,
+					"Rootattri" : rootattri,
+					"Roottag" : roottag
+
+				}
+
+			}
+
+			data.push(pairs);
+			console.log(data);
+
+			if (clicked_finished == 0) {
+
+				var clone = original.cloneNode(true);
+				clone.id = "secondpage" + i;
+				clone.children[2].id = "form" + i;
+				clone.children[2].children[0].id = "Tag" + i;
+				clone.children[2].children[1].id = "ParentTag" + i;
+				clone.children[2].children[2].id = "attri" + i;
+				clone.children[2].elements[0].value = ""
+				clone.children[2].elements[1].value = ""
+				clone.children[2].elements[2].value = ""
+
+				clone.children[3].id = "selected" + i;
+				temp = "textToggle(" + i + ")";
+				clone.children[3].setAttribute("onchange", temp);
+				clone.children[4].id = "texttoggle" + i;
+				clone.children[4].setAttribute("style", "display: none;");
+				clone.children[4].children[0].id = "type" + i;
+				clone.children[4].children[1].id = "minoccur" + i;
+				clone.children[4].children[2].id = "default" + i;
+				clone.children[4].children[3].id = "maxoccur" + i;
+				clone.children[4].children[0].value = "";
+				clone.children[4].children[1].value = "";
+				clone.children[4].children[2].value = "";
+				clone.children[4].children[3].value = "";
+				clone.children[5].id = "tagtoggle" + i;
+				clone.children[5].setAttribute("style", "display: none;");
+				clone.children[5].children[0].id = "toggleattri" + i;
+				clone.children[5].children[1].id = "togglemin" + i;
+				clone.children[5].children[0].value = "";
+				clone.children[5].children[1].value = "";
+				clone.children[6].children[0].id = "page2id" + i;
+				clone.children[6].children[0].disabled = false;
+				clone.children[6].children[1].id = "page2idf" + i;
+				clone.children[6].children[1].disabled = false;
+
+				//		 clone.children[6].children[0].setAttribute("onclick", duplicate);
+				//		 clone.children[6].children[1].setAttribute("onclick", duplicate);
+
+				original.parentNode.appendChild(clone, beforeElem);
+
+				var temp = "page2id" + (i - 1);
+				document.getElementById(temp).disabled = true;
+				var temp = "page2idf" + (i - 1);
+				document.getElementById(temp).disabled = true;
+
+				i = i + 1;
+
+			}
+		}
+	</script>
+
+
+</body>
+
+
+</html>
